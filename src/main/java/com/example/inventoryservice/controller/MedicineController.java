@@ -23,4 +23,9 @@ public class MedicineController {
                                 @RequestBody UpdatePriceRequest request) {
         return medicineService.updatePrice(id, request.getPrice());
     }
+
+    @PostMapping("/{id}/import")
+    public Medicine importStock(@PathVariable String id, @RequestParam int quantity) {
+        return medicineService.importStock(id, quantity);
+    }
 }

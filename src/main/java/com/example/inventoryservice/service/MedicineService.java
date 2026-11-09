@@ -1,5 +1,7 @@
 package com.example.inventoryservice.service;
 
+import com.example.inventoryservice.alert.AlertMessage;
+import com.example.inventoryservice.alert.AlertPublisher;
 import com.example.inventoryservice.entity.Medicine;
 import com.example.inventoryservice.repository.MedicineRepository;
 import jakarta.transaction.Transactional;
@@ -13,7 +15,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class MedicineService {
-
+    private final AlertPublisher alertPublisher;
     private final MedicineRepository medicineRepository;
 
     @Cacheable(value = "medicines", key = "#id")
@@ -36,5 +38,17 @@ public class MedicineService {
     @CacheEvict(value = "medicines", key = "#medicine.id")
     public Medicine update(Medicine medicine) {
         return medicineRepository.save(medicine);
+    }
+
+    @CacheEvict(value = "medicines", key = "#id")
+    @Transactional
+    public Medicine importStock(String id, int quantity) {
+        Medicine m = medicineRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy thuốc " + id));
+        m.setStock(m.getStock() + quantity);
+        Medicine saved = medicineRepository.save(m);
+        alertPublisher.publish(new AlertMessage("IMPORT",
+                "Đã nhập " + quantity + " hộp " + m.getName()));
+        return saved;
     }
 }
